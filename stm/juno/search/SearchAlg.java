@@ -81,15 +81,15 @@ public class SearchAlg {
                 clone.executeMove(possibleMoves.get(i), false);
                 int p = game.getPlayers().getCurrentPlayerIndex();
 
-                Tuple<Move, double[]> psiEstrela = hypermax(clone, depth, Arrays.copyOf(alpha, alpha.length));
+                Tuple<Move, double[]> psiStar = hypermax(clone, depth, Arrays.copyOf(alpha, alpha.length));
 
                 if (i == 0) {
-                    bestMove = new Tuple<>(possibleMoves.get(i), psiEstrela.y);
+                    bestMove = new Tuple<>(possibleMoves.get(i), psiStar.y);
                 }
 
-                if (alpha[p] < psiEstrela.y[p]) {
-                    alpha[p] = psiEstrela.y[p];
-                    bestMove = new Tuple<>(possibleMoves.get(i), psiEstrela.y);
+                if (alpha[p] < psiStar.y[p]) {
+                    alpha[p] = psiStar.y[p];
+                    bestMove = new Tuple<>(possibleMoves.get(i), psiStar.y);
                 }
 
                 if (sum(alpha) >= 0) {
