@@ -18,7 +18,7 @@ public class DrawPile extends ArrayList<Card> {
 
     public DrawPile(DrawPile toCopy) {
         addAll(toCopy);
-        this.verbose = toCopy.verbose;
+        this.verbose = false;
     }
 
     public Card[] draw(int nCards, DiscardPile discardPile) throws UnsupportedOperationException {
