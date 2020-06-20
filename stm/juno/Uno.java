@@ -134,9 +134,6 @@ public class Uno {
         if (discardPile.isPendingAction()) {
             switch (discardPile.getLastPlayed().getType()) {
                 case WILD:
-                    // This only happens at the start of the game. If the first card
-                    // is a wild, then the next player gets to choose the color instead
-                    // of the first one
                     for (CardColor color : CardColor.values()) {
                         final List<Integer> compatibleCardsIndexes = getCompatibleCardsIndexes(
                                 players.getCurrentPlayer().getCards(), null, color);

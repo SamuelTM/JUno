@@ -1,5 +1,7 @@
 package stm.juno;
 
+import stm.juno.search.SearchAlg;
+
 import java.util.HashMap;
 
 public class Main {
@@ -25,6 +27,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        playGames(1, 2, true);
+        SearchAlg.maxSearchDepth = 50;
+        playGames(1, 5, true);
     }
 }
