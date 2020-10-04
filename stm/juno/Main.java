@@ -27,7 +27,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        SearchAlg.maxSearchDepth = 50;
-        playGames(1, 5, true);
+        SearchAlg.maxSearchDepth = 25;
+        playGames(1, 10, true);
     }
 }

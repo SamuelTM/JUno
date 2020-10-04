@@ -4,15 +4,15 @@ import stm.juno.cards.Card;
 import stm.juno.cards.CardColor;
 import stm.juno.cards.CardType;
 
-import java.util.ArrayList;
+import java.util.Stack;
 
-public class DiscardPile extends ArrayList<Card> {
+public class DiscardPile extends Stack<Card> {
 
     private CardColor lastColor;
     private boolean pendingAction;
 
     public DiscardPile(Card first) {
-        add(first);
+        push(first);
         lastColor = first.getColor();
         pendingAction = !first.getType().equals(CardType.NUMBER);
     }
@@ -40,12 +40,12 @@ public class DiscardPile extends ArrayList<Card> {
     }
 
     public void discard(Card card) {
-        add(card);
+        push(card);
         lastColor = card.getColor();
         pendingAction = !card.getType().equals(CardType.NUMBER) && !card.getType().equals(CardType.WILD);
     }
 
     public Card getLastPlayed() {
-        return get(size() - 1);
+        return peek();
     }
 }

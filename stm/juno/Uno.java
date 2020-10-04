@@ -231,8 +231,8 @@ public class Uno {
     }
 
     public void printStatus(List<Move> possibleMoves) {
-        System.out.println(String.format("----- PLAYER %d - turn %d -----", players.getCurrentPlayerIndex(),
-                totalTurns));
+        System.out.printf("----- PLAYER %d - turn %d -----%n", players.getCurrentPlayerIndex(),
+                totalTurns);
         System.out.println("Last card played: " + discardPile.getLastPlayed().toString());
         System.out.println("Last color: " + (discardPile.getLastColor() != null
                 ? discardPile.getLastColor().toString() : "none"));

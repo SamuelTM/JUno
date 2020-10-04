@@ -2,11 +2,11 @@ package stm.juno.piles;
 
 import stm.juno.cards.Card;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Stack;
 
-public class DrawPile extends ArrayList<Card> {
+public class DrawPile extends Stack<Card> {
 
     private final boolean verbose;
 
@@ -26,18 +26,22 @@ public class DrawPile extends ArrayList<Card> {
 
         if (discardPile != null) {
             if (size() < nCards && discardPile.size() >= (nCards - size())) {
-                // Let's add the cards from the discard pile back to the draw pile
                 Card top = getNext();
 
                 if (top != null) {
-                    remove(size() - 1);
+                    pop();
                 }
 
+                // Let's add the cards from the discard pile back to the draw pile
+                Card topDiscardPileCard = discardPile.pop();
+
                 int discardPileSize = discardPile.size();
-                // But don't forget to keep the last card played on the discard pile
-                for (int i = 0; i < discardPileSize - 1; i++) {
-                    add(discardPile.remove(0));
+
+                for (int i = 0; i < discardPileSize; i++) {
+                    push(discardPile.pop());
                 }
+                // But don't forget to keep the last card played on the discard pile
+                discardPile.push(topDiscardPileCard);
 
                 if (verbose) {
                     System.out.println("We added the cards from the discard pile back to the draw pile");
@@ -45,7 +49,7 @@ public class DrawPile extends ArrayList<Card> {
                 Collections.shuffle(this);
 
                 if (top != null) {
-                    add(top);
+                    push(top);
                 }
             } else if (size() < nCards && discardPile.size() < (nCards - size())) {
                 // We aren't supposed to get to this point but oh well
@@ -53,7 +57,7 @@ public class DrawPile extends ArrayList<Card> {
             }
 
             for (int i = 0; i < nCards; i++) {
-                cards[i] = remove(size() - 1);
+                cards[i] = pop();
             }
         }
 
@@ -61,6 +65,6 @@ public class DrawPile extends ArrayList<Card> {
     }
 
     public Card getNext() {
-        return !isEmpty() ? get(size() - 1) : null;
+        return !isEmpty() ? peek() : null;
     }
 }
