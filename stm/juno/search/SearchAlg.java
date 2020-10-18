@@ -1,7 +1,7 @@
 package stm.juno.search;
 
 import stm.juno.Uno;
-import stm.juno.actions.Move;
+import stm.juno.moves.Move;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +33,7 @@ public class SearchAlg {
         } else {
             Tuple<Move, double[]> bestMove = null;
             double alpha = -Double.MAX_VALUE;
-            List<Move> possibleMoves = game.getPossibleMoves();
+            List<Move> possibleMoves = game.getMoveFinder().getPossibleMoves();
             for (Move move : possibleMoves) {
                 Uno clone = new Uno(game);
                 clone.executeMove(move, false);
@@ -75,7 +75,7 @@ public class SearchAlg {
             return new Tuple<>(new Move(), subtractAverage(game.getScores()));
         } else {
             Tuple<Move, double[]> bestMove = null;
-            List<Move> possibleMoves = game.getPossibleMoves();
+            List<Move> possibleMoves = game.getMoveFinder().getPossibleMoves();
             for (int i = 0; i < possibleMoves.size(); i++) {
                 Uno clone = new Uno(game);
                 clone.executeMove(possibleMoves.get(i), false);

@@ -28,6 +28,6 @@ public class Main {
 
     public static void main(String[] args) {
         SearchAlg.maxSearchDepth = 25;
-        playGames(1, 10, true);
+        playGames(1, 3, true);
     }
 }

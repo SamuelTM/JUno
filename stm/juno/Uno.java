@@ -1,16 +1,17 @@
 package stm.juno;
 
-import stm.juno.actions.*;
+import stm.juno.moves.Move;
 import stm.juno.cards.Card;
-import stm.juno.cards.CardColor;
 import stm.juno.cards.CardType;
-import stm.juno.entities.Player;
 import stm.juno.entities.Players;
+import stm.juno.moves.MoveFinder;
 import stm.juno.piles.DiscardPile;
 import stm.juno.piles.DrawPile;
 import stm.juno.search.SearchAlg;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.DoubleStream;
 
 public class Uno {
@@ -26,6 +27,8 @@ public class Uno {
     private final boolean verbose;
 
     private final Random random;
+
+    private final MoveFinder moveFinder;
 
     public Uno(int nPlayers, boolean verbose) {
         this.drawPile = new DrawPile(Card.getDeck(), verbose);
@@ -45,6 +48,8 @@ public class Uno {
         this.verbose = verbose;
 
         this.random = new Random();
+
+        this.moveFinder = new MoveFinder(this);
     }
 
     public Uno(Uno toCopy) {
@@ -63,6 +68,7 @@ public class Uno {
 
         verbose = toCopy.verbose;
         random = new Random();
+        moveFinder = new MoveFinder(this);
     }
 
     public int getWinnerIndex() {
@@ -73,161 +79,6 @@ public class Uno {
         }
 
         return -1;
-    }
-
-    private List<Integer> getCompatibleCardsIndexes(List<Card> currentPlayerCards, Card testCard,
-                                                    CardColor testColor) {
-        final List<Integer> results = new ArrayList<>();
-        final HashMap<Card, Integer> uniqueCards = new HashMap<>();
-        for (int i = 0; i < currentPlayerCards.size(); i++) {
-            Card c = currentPlayerCards.get(i);
-            if (c.getValue() == 50) {
-                uniqueCards.putIfAbsent(c, i);
-            } else {
-                if (testCard != null && testCard.getColor() != null) {
-                    if (c.getColor().equals(testCard.getColor())) {
-                        uniqueCards.putIfAbsent(c, i);
-                    } else {
-                        boolean sameType = c.getType().equals(testCard.getType()),
-                                isNumber = c.getType().equals(CardType.NUMBER),
-                                sameValue = c.getValue() == testCard.getValue();
-                        if ((sameType && !isNumber) || (isNumber && sameValue)) {
-                            uniqueCards.putIfAbsent(c, i);
-                        }
-                    }
-                } else if (testColor != null) {
-                    if (c.getColor().equals(testColor)) {
-                        uniqueCards.putIfAbsent(c, i);
-                    }
-                }
-            }
-        }
-
-        for (Card card : uniqueCards.keySet()) {
-            results.add(uniqueCards.get(card));
-        }
-
-        return results;
-    }
-
-    private boolean isCardValidAsNextMove(Card card) {
-        if (card != null) {
-            Player currentPlayer = players.getCurrentPlayer();
-            Card lastPlayed = discardPile.getLastPlayed();
-            CardColor lastColor = discardPile.getLastColor();
-
-            currentPlayer.getCards().add(card);
-            int lastWithdrawalIndex = currentPlayer.getCards().size() - 1;
-            List<Integer> compatibleCardsIndexes = getCompatibleCardsIndexes(currentPlayer.getCards(), lastPlayed,
-                    lastColor);
-            boolean validCard = !compatibleCardsIndexes.isEmpty() && compatibleCardsIndexes
-                    .get(compatibleCardsIndexes.size() - 1).equals(lastWithdrawalIndex);
-            currentPlayer.getCards().remove(lastWithdrawalIndex);
-
-            return validCard;
-        }
-        return false;
-    }
-
-    public List<Move> getPossibleMoves() {
-        List<Move> possibleMoves = new ArrayList<>();
-        if (discardPile.isPendingAction()) {
-            switch (discardPile.getLastPlayed().getType()) {
-                case WILD:
-                    for (CardColor color : CardColor.values()) {
-                        final List<Integer> compatibleCardsIndexes = getCompatibleCardsIndexes(
-                                players.getCurrentPlayer().getCards(), null, color);
-                        if (compatibleCardsIndexes.size() > 0) {
-                            for (int cardIndex : compatibleCardsIndexes) {
-                                Card possibleCard = players.getCurrentPlayer().getCards().get(cardIndex);
-                                if (possibleCard.getColor() == null) {
-                                    for (CardColor nextColor : CardColor.values()) {
-                                        // We can choose the color, play a wild or wild draw four and choose the color
-                                        possibleMoves.add(new Move(new ChooseColor(color),
-                                                new PlayCard(cardIndex, possibleCard), new ChooseColor(nextColor)));
-                                    }
-                                } else {
-                                    // Or we can choose the color and play any other card that isn't a wild
-                                    possibleMoves.add(new Move(new ChooseColor(color),
-                                            new PlayCard(cardIndex, possibleCard)));
-                                }
-                            }
-                        } else {
-                            // If we don't have a suitable card, we choose the color and draw one from the pile
-                            possibleMoves.add(new Move(new ChooseColor(color), new DrawCard(1)));
-                        }
-
-                        Card nextOnPile = drawPile.getNext();
-                        if (isCardValidAsNextMove(nextOnPile)) {
-                            if (nextOnPile.getColor() == null) {
-                                for (CardColor nextColor : CardColor.values()) {
-                                    // We can also choose the color, draw a card that is a wild or wild draw four,
-                                    // play it and choose the color
-                                    possibleMoves.add(new Move(new ChooseColor(color), new DrawCard(1),
-                                            new PlayCard(-players.getCurrentPlayer().getCards().size(), nextOnPile),
-                                            new ChooseColor(nextColor)));
-                                }
-                            } else {
-                                // And we can choose the color, draw a card that isn't a wild but can be played
-                                // and play it
-                                possibleMoves.add(new Move(new ChooseColor(color), new DrawCard(1),
-                                        new PlayCard(-players.getCurrentPlayer().getCards().size(), nextOnPile)));
-                            }
-                        }
-                    }
-                    break;
-                case WILD_DRAW_FOUR:
-                    possibleMoves.add(new Move(new DrawCard(4)));
-                    break;
-                case DRAW_TWO:
-                    possibleMoves.add(new Move(new DrawCard(2)));
-                    break;
-                case REVERSE:
-                    possibleMoves.add(new Move(new ReverseDirection()));
-                    break;
-                case SKIP:
-                    possibleMoves.add(new Move(new SkipPlayer()));
-                    break;
-            }
-        } else {
-            Card nextOnPile = drawPile.getNext();
-            if (isCardValidAsNextMove(nextOnPile)) {
-                if (nextOnPile.getColor() == null) {
-                    for (CardColor nextColor : CardColor.values()) {
-                        // We can draw a wild or wild draw four, play it and choose the color
-                        possibleMoves.add(new Move(new DrawCard(1),
-                                new PlayCard(-players.getCurrentPlayer().getCards().size(), nextOnPile),
-                                new ChooseColor(nextColor)));
-                    }
-                } else {
-                    // We can draw a card that isn't a wild but can be played, then play it
-                    possibleMoves.add(new Move(new DrawCard(1),
-                            new PlayCard(-players.getCurrentPlayer().getCards().size(), nextOnPile)));
-                }
-            }
-            List<Integer> compatibleCardsIndexes = getCompatibleCardsIndexes(players.getCurrentPlayer().getCards(),
-                    discardPile.getLastPlayed(), discardPile.getLastColor());
-            if (!compatibleCardsIndexes.isEmpty()) {
-                for (int compatibleCardIndex : compatibleCardsIndexes) {
-                    Card possibleCard = players.getCurrentPlayer().getCards().get(compatibleCardIndex);
-                    if (possibleCard.getColor() == null) {
-                        for (CardColor color : CardColor.values()) {
-                            // We can play a wild or wild draw four and choose the color
-                            possibleMoves.add(new Move(new PlayCard(compatibleCardIndex, possibleCard),
-                                    new ChooseColor(color)));
-                        }
-                    } else {
-                        // Or we can just play any other available card
-                        possibleMoves.add(new Move(new PlayCard(compatibleCardIndex, possibleCard)));
-                    }
-                }
-            } else {
-                // If we don't have a suitable card to play, we're going to need to draw one from the pile
-                possibleMoves.add(new Move(new DrawCard(1)));
-            }
-        }
-
-        return possibleMoves;
     }
 
     public void printStatus(List<Move> possibleMoves) {
@@ -288,7 +139,7 @@ public class Uno {
     }
 
     private void chooseMove() {
-        List<Move> possibleMoves = getPossibleMoves();
+        List<Move> possibleMoves = moveFinder.getPossibleMoves();
         if (verbose) {
             printStatus(possibleMoves);
         }
@@ -333,5 +184,9 @@ public class Uno {
 
     public double[] getScores() {
         return scores;
+    }
+
+    public MoveFinder getMoveFinder() {
+        return moveFinder;
     }
 }
