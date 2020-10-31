@@ -28,7 +28,7 @@ public class MoveFinder {
             if (currentPlayerCard.isWildCard()) {
                 uniqueCards.putIfAbsent(currentPlayerCard, i);
             } else {
-                if (testCard != null && testCard.isWildCard()) {
+                if (testCard != null && !testCard.isWildCard()) {
                     if (currentPlayerCard.getColor().equals(testCard.getColor())) {
                         uniqueCards.putIfAbsent(currentPlayerCard, i);
                     } else {
