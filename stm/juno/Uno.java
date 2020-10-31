@@ -81,6 +81,24 @@ public class Uno {
         return -1;
     }
 
+    private void chooseAndExecuteMove() {
+        List<Move> possibleMoves = moveFinder.getPossibleMoves();
+        if (verbose) {
+            printStatus(possibleMoves);
+        }
+
+        Move choice;
+
+        if (players.getCurrentPlayerIndex() == 0) {
+            //choice = SearchAlg.NMax(this, 0).x;
+            choice = SearchAlg.hypermax(this, 0, SearchAlg.getAlpha(players.size())).x;
+        } else {
+            choice = possibleMoves.get(random.nextInt(possibleMoves.size()));
+        }
+
+        executeMove(choice, verbose);
+    }
+
     public void printStatus(List<Move> possibleMoves) {
         System.out.printf("----- PLAYER %d - turn %d -----%n", players.getCurrentPlayerIndex(),
                 totalTurns);
@@ -94,6 +112,20 @@ public class Uno {
         System.out.println("Number of possible moves: " + possibleMoves.size());
         for (Move m : possibleMoves) {
             System.out.println(m.toString());
+        }
+    }
+
+    public void executeMove(Move move, boolean verbose) {
+        lastTotalOfCardsHeldByEachPlayer = players.getTotalOfCardsHeldByEachPlayer();
+        move.execute(this, verbose);
+
+        updateScores();
+        totalTurns++;
+        players.nextPlayer();
+
+        if (verbose) {
+            System.out.println("Current scores: " + Arrays.toString(scores));
+            System.out.println("Sum of scores: " + DoubleStream.of(scores).sum());
         }
     }
 
@@ -124,43 +156,12 @@ public class Uno {
         System.arraycopy(results, 0, scores, 0, results.length);
     }
 
-    public void executeMove(Move move, boolean verbose) {
-        lastTotalOfCardsHeldByEachPlayer = players.getTotalOfCardsHeldByEachPlayer();
-        move.execute(this, verbose);
-
-        updateScores();
-        totalTurns++;
-        players.nextPlayer();
-
-        if (verbose) {
-            System.out.println("Current scores: " + Arrays.toString(scores));
-            System.out.println("Sum of scores: " + DoubleStream.of(scores).sum());
-        }
-    }
-
-    private void chooseMove() {
-        List<Move> possibleMoves = moveFinder.getPossibleMoves();
-        if (verbose) {
-            printStatus(possibleMoves);
-        }
-
-        Move choice;
-
-        if (players.getCurrentPlayerIndex() == 0) {
-            //choice = SearchAlg.NMax(this, 0).x;
-            choice = SearchAlg.hypermax(this, 0, SearchAlg.getAlpha(players.size())).x;
-        } else {
-            choice = possibleMoves.get(random.nextInt(possibleMoves.size()));
-        }
-
-        executeMove(choice, verbose);
-    }
 
     public boolean nextMove() {
         int winner = getWinnerIndex();
 
         if (winner == -1) {
-            chooseMove();
+            chooseAndExecuteMove();
             return true;
         } else {
             if (verbose) {

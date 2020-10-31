@@ -86,6 +86,10 @@ public enum Card {
         return value;
     }
 
+    public boolean isWildCard() {
+        return this.value == 50;
+    }
+
     public static Card[] getDeck() {
         final Card[] deck = new Card[108];
         int currentIndex = 0;
@@ -108,4 +112,5 @@ public enum Card {
 
         return deck;
     }
+
 }
