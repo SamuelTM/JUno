@@ -89,7 +89,7 @@ public class MoveFinder {
             final List<Integer> indexesOfCardsCompatibleWithColor = getIndexesOfCardsCompatibleWithTestCardOrTestColor(
                     game.getPlayers().getCurrentPlayer().getCards(), null, possibleColorChoice);
             if (!indexesOfCardsCompatibleWithColor.isEmpty()) {
-                addChooseColorAndPlayCardAtHandMove(possibleMoves, possibleColorChoice,
+                addMoveChooseColorAndPlayCardAtHand(possibleMoves, possibleColorChoice,
                         indexesOfCardsCompatibleWithColor);
             } else {
                 // If we don't have a suitable card, we choose the color and draw one from the pile
@@ -98,7 +98,7 @@ public class MoveFinder {
 
             Card nextOnPile = game.getDrawPile().getNext();
             if (isCardValidAsNextMove(nextOnPile)) {
-                addChooseColorDrawCardAndPlayItMove(possibleMoves, possibleColorChoice, nextOnPile);
+                addMoveChooseColorDrawCardAndPlayIt(possibleMoves, possibleColorChoice, nextOnPile);
 
                 // Technically, we could also add the possibility of choosing a color, drawing a card
                 // and keeping it. However, this would generate a problematic tree of possibilities
@@ -109,7 +109,7 @@ public class MoveFinder {
         }
     }
 
-    private void addChooseColorAndPlayCardAtHandMove(List<Move> possibleMoves, CardColor possibleColorChoice,
+    private void addMoveChooseColorAndPlayCardAtHand(List<Move> possibleMoves, CardColor possibleColorChoice,
                                                      List<Integer> indexesOfCardsCompatibleWithColor) {
         for (int cardIndex : indexesOfCardsCompatibleWithColor) {
             Card possibleCard = game.getPlayers().getCurrentPlayer().getCards().get(cardIndex);
@@ -127,11 +127,11 @@ public class MoveFinder {
         }
     }
 
-    private void addChooseColorDrawCardAndPlayItMove(List<Move> possibleMoves, CardColor possibleColorChoice,
+    private void addMoveChooseColorDrawCardAndPlayIt(List<Move> possibleMoves, CardColor possibleColorChoice,
                                                      Card nextOnPile) {
         if (nextOnPile.isWildCard()) {
             for (CardColor nextColor : CardColor.values()) {
-                // We can also choose the color, draw a card that is a wild or wild draw four,
+                // We can choose the color, draw a card that is a wild or wild draw four,
                 // play it and choose the color
                 possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1),
                         new PlayCard(-game.getPlayers().getCurrentPlayer().getCards().size(),
