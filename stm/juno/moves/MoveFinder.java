@@ -28,8 +28,7 @@ public class MoveFinder {
             if (currentPlayerCard.isWildCard()) {
                 uniqueCards.putIfAbsent(currentPlayerCard, i);
             } else {
-                boolean testCardIsNotWildCard = testCard != null && testCard.getColor() != null;
-                if (testCardIsNotWildCard) {
+                if (testCard != null && testCard.isWildCard()) {
                     if (currentPlayerCard.getColor().equals(testCard.getColor())) {
                         uniqueCards.putIfAbsent(currentPlayerCard, i);
                     } else {
@@ -111,7 +110,7 @@ public class MoveFinder {
             if (compatibleCardsIndexes.size() > 0) {
                 for (int cardIndex : compatibleCardsIndexes) {
                     Card possibleCard = game.getPlayers().getCurrentPlayer().getCards().get(cardIndex);
-                    if (possibleCard.getColor() == null) {
+                    if (possibleCard.isWildCard()) {
                         for (CardColor nextColor : CardColor.values()) {
                             // We can choose the color, play a wild or wild draw four and choose the color
                             possibleMoves.add(new Move(new ChooseColor(color),
@@ -130,7 +129,7 @@ public class MoveFinder {
 
             Card nextOnPile = game.getDrawPile().getNext();
             if (isCardValidAsNextMove(nextOnPile)) {
-                if (nextOnPile.getColor() == null) {
+                if (nextOnPile.isWildCard()) {
                     for (CardColor nextColor : CardColor.values()) {
                         // We can also choose the color, draw a card that is a wild or wild draw four,
                         // play it and choose the color
@@ -172,7 +171,7 @@ public class MoveFinder {
         if (!compatibleCardsIndexes.isEmpty()) {
             for (int compatibleCardIndex : compatibleCardsIndexes) {
                 Card possibleCard = game.getPlayers().getCurrentPlayer().getCards().get(compatibleCardIndex);
-                if (possibleCard.getColor() == null) {
+                if (possibleCard.isWildCard()) {
                     for (CardColor color : CardColor.values()) {
                         // We can play a wild or wild draw four and choose the color
                         possibleMoves.add(new Move(new PlayCard(compatibleCardIndex, possibleCard),
