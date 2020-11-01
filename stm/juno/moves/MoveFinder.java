@@ -7,9 +7,7 @@ import stm.juno.cards.CardColor;
 import stm.juno.cards.CardType;
 import stm.juno.entities.Player;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 public class MoveFinder {
 
@@ -19,9 +17,8 @@ public class MoveFinder {
         this.game = game;
     }
 
-    private List<Integer> getIndexesOfCardsCompatibleWithTestCardOrTestColor(List<Card> cards, Card testCard,
-                                                                             CardColor testColor) {
-        final List<Integer> indexesOfCompatibleCards = new ArrayList<>();
+    private List<Integer> getIndexesOfCardsCompatibleWithTestCardOrColor(List<Card> cards, Card testCard,
+                                                                         CardColor testColor) {
         final HashMap<Card, Integer> uniqueCards = new HashMap<>();
         for (int i = 0; i < cards.size(); i++) {
             Card currentPlayerCard = cards.get(i);
@@ -47,22 +44,18 @@ public class MoveFinder {
             }
         }
 
-        for (Card card : uniqueCards.keySet()) {
-            indexesOfCompatibleCards.add(uniqueCards.get(card));
-        }
-
-        return indexesOfCompatibleCards;
+        return new ArrayList<>(uniqueCards.values());
     }
 
     public List<Move> getPossibleMoves() {
         if (game.getDiscardPile().isPendingAction()) {
-            return getMoveThatSolvesPendingAction();
+            return getMovesThatSolvePendingAction();
         } else {
             return getPossibleMovesWhenThereIsNoPendingAction();
         }
     }
 
-    private List<Move> getMoveThatSolvesPendingAction() {
+    private List<Move> getMovesThatSolvePendingAction() {
         final List<Move> possibleMoves = new ArrayList<>();
         switch (game.getDiscardPile().getLastPlayed().getType()) {
             case WILD:
@@ -86,10 +79,10 @@ public class MoveFinder {
 
     private void addMovesThatSolvePendingActionFromWildCard(List<Move> possibleMoves) {
         for (CardColor possibleColorChoice : CardColor.values()) {
-            final List<Integer> indexesOfCardsCompatibleWithColor = getIndexesOfCardsCompatibleWithTestCardOrTestColor(
+            final List<Integer> indexesOfCardsCompatibleWithColor = getIndexesOfCardsCompatibleWithTestCardOrColor(
                     game.getPlayers().getCurrentPlayer().getCards(), null, possibleColorChoice);
             if (!indexesOfCardsCompatibleWithColor.isEmpty()) {
-                addMoveChooseColorAndPlayCardAtHand(possibleMoves, possibleColorChoice,
+                addChooseColorAndPlayCardAtHandMove(possibleMoves, possibleColorChoice,
                         indexesOfCardsCompatibleWithColor);
             } else {
                 // If we don't have a suitable card, we choose the color and draw one from the pile
@@ -98,7 +91,7 @@ public class MoveFinder {
 
             Card nextOnPile = game.getDrawPile().getNext();
             if (isCardValidAsNextMove(nextOnPile)) {
-                addMoveChooseColorDrawCardAndPlayIt(possibleMoves, possibleColorChoice, nextOnPile);
+                addChooseColorDrawCardAndPlayItMove(possibleMoves, possibleColorChoice, nextOnPile);
 
                 // Technically, we could also add the possibility of choosing a color, drawing a card
                 // and keeping it. However, this would generate a problematic tree of possibilities
@@ -109,7 +102,7 @@ public class MoveFinder {
         }
     }
 
-    private void addMoveChooseColorAndPlayCardAtHand(List<Move> possibleMoves, CardColor possibleColorChoice,
+    private void addChooseColorAndPlayCardAtHandMove(List<Move> possibleMoves, CardColor possibleColorChoice,
                                                      List<Integer> indexesOfCardsCompatibleWithColor) {
         for (int cardIndex : indexesOfCardsCompatibleWithColor) {
             Card possibleCard = game.getPlayers().getCurrentPlayer().getCards().get(cardIndex);
@@ -127,7 +120,7 @@ public class MoveFinder {
         }
     }
 
-    private void addMoveChooseColorDrawCardAndPlayIt(List<Move> possibleMoves, CardColor possibleColorChoice,
+    private void addChooseColorDrawCardAndPlayItMove(List<Move> possibleMoves, CardColor possibleColorChoice,
                                                      Card nextOnPile) {
         if (nextOnPile.isWildCard()) {
             for (CardColor nextColor : CardColor.values()) {
@@ -152,11 +145,11 @@ public class MoveFinder {
         if (isCardValidAsNextMove(nextOnPile)) {
             addPlayNextOnPileToPossibleMoves(possibleMoves, nextOnPile);
         }
-        List<Integer> currentPlayersPlayableCards = getIndexesOfCardsCompatibleWithTestCardOrTestColor(
+        List<Integer> currentPlayerPlayableCards = getIndexesOfCardsCompatibleWithTestCardOrColor(
                 game.getPlayers().getCurrentPlayer().getCards(), game.getDiscardPile().getLastPlayed(),
                 game.getDiscardPile().getLastColor());
-        if (!currentPlayersPlayableCards.isEmpty()) {
-            addPlayableCardsToPossibleMoves(possibleMoves, currentPlayersPlayableCards);
+        if (!currentPlayerPlayableCards.isEmpty()) {
+            addPlayableCardsToPossibleMoves(possibleMoves, currentPlayerPlayableCards);
         } else {
             // If we don't have a suitable card to play, we're going to need to draw one from the pile
             possibleMoves.add(new Move(new DrawCard(1)));
@@ -178,7 +171,7 @@ public class MoveFinder {
 
             currentPlayer.getCards().add(card);
             int lastWithdrawalIndex = currentPlayer.getCards().size() - 1;
-            List<Integer> indexesOfCompatibleCards = getIndexesOfCardsCompatibleWithTestCardOrTestColor(
+            List<Integer> indexesOfCompatibleCards = getIndexesOfCardsCompatibleWithTestCardOrColor(
                     currentPlayer.getCards(), lastPlayed, lastColor);
             boolean validCard = !indexesOfCompatibleCards.isEmpty() && indexesOfCompatibleCards
                     .get(indexesOfCompatibleCards.size() - 1).equals(lastWithdrawalIndex);
