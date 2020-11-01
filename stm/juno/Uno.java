@@ -2,7 +2,6 @@ package stm.juno;
 
 import stm.juno.moves.Move;
 import stm.juno.cards.Card;
-import stm.juno.cards.CardType;
 import stm.juno.entities.Players;
 import stm.juno.moves.MoveFinder;
 import stm.juno.piles.DiscardPile;
@@ -33,13 +32,7 @@ public class Uno {
     public Uno(int nPlayers, boolean verbose) {
         this.drawPile = new DrawPile(Card.getDeck(), verbose);
 
-        Card firstCard;
-
-        while ((firstCard = drawPile.remove(drawPile.size() - 1)).getType().equals(CardType.WILD_DRAW_FOUR)) {
-            drawPile.add(0, firstCard);
-        }
-
-        this.discardPile = new DiscardPile(firstCard);
+        this.discardPile = new DiscardPile(this.drawPile.getStartingCard());
         this.players = new Players(nPlayers, 7, this);
 
         this.scores = new double[nPlayers];
@@ -90,7 +83,6 @@ public class Uno {
         Move choice;
 
         if (players.getCurrentPlayerIndex() == 0) {
-            //choice = SearchAlg.NMax(this, 0).x;
             choice = SearchAlg.hypermax(this, 0, SearchAlg.getAlpha(players.size())).x;
         } else {
             choice = possibleMoves.get(random.nextInt(possibleMoves.size()));

@@ -1,6 +1,7 @@
 package stm.juno.piles;
 
 import stm.juno.cards.Card;
+import stm.juno.cards.CardType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,7 +65,17 @@ public class DrawPile extends Stack<Card> {
         return cards;
     }
 
+    public Card getStartingCard() {
+        Card firstCard;
+
+        while ((firstCard = pop()).getType().equals(CardType.WILD_DRAW_FOUR)) {
+            push(firstCard);
+        }
+
+        return firstCard;
+    }
+
     public Card getNext() {
-        return !isEmpty() ? peek() : null;
+        return peek();
     }
 }

@@ -85,19 +85,12 @@ public class MoveFinder {
                 addChooseColorAndPlayCardAtHandMove(possibleMoves, possibleColorChoice,
                         indexesOfCardsCompatibleWithColor);
             } else {
-                // If we don't have a suitable card, we choose the color and draw one from the pile
                 possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1)));
             }
 
             Card nextOnPile = game.getDrawPile().getNext();
             if (isCardValidAsNextMove(nextOnPile)) {
                 addChooseColorDrawCardAndPlayItMove(possibleMoves, possibleColorChoice, nextOnPile);
-
-                // Technically, we could also add the possibility of choosing a color, drawing a card
-                // and keeping it. However, this would generate a problematic tree of possibilities
-                // since each player could choose to draw a card and keep it instead of playing it, so
-                // no one would ever play.
-
             }
         }
     }
@@ -108,12 +101,10 @@ public class MoveFinder {
             Card possibleCard = game.getPlayers().getCurrentPlayer().getCards().get(cardIndex);
             if (possibleCard.isWildCard()) {
                 for (CardColor nextColor : CardColor.values()) {
-                    // We can choose the color, play a wild or wild draw four and choose the color
                     possibleMoves.add(new Move(new ChooseColor(possibleColorChoice),
                             new PlayCard(cardIndex, possibleCard), new ChooseColor(nextColor)));
                 }
             } else {
-                // Or we can choose the color and play any other card that isn't a wild
                 possibleMoves.add(new Move(new ChooseColor(possibleColorChoice),
                         new PlayCard(cardIndex, possibleCard)));
             }
@@ -124,15 +115,11 @@ public class MoveFinder {
                                                      Card nextOnPile) {
         if (nextOnPile.isWildCard()) {
             for (CardColor nextColor : CardColor.values()) {
-                // We can choose the color, draw a card that is a wild or wild draw four,
-                // play it and choose the color
                 possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1),
                         new PlayCard(-game.getPlayers().getCurrentPlayer().getCards().size(),
                                 nextOnPile), new ChooseColor(nextColor)));
             }
         } else {
-            // And we can choose the color, draw a card that isn't a wild but can be played
-            // and play it
             possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1),
                     new PlayCard(-game.getPlayers().getCurrentPlayer().getCards().size(),
                             nextOnPile)));
@@ -151,15 +138,8 @@ public class MoveFinder {
         if (!currentPlayerPlayableCards.isEmpty()) {
             addPlayableCardsToPossibleMoves(possibleMoves, currentPlayerPlayableCards);
         } else {
-            // If we don't have a suitable card to play, we're going to need to draw one from the pile
             possibleMoves.add(new Move(new DrawCard(1)));
         }
-
-        // Technically, we could also add the possibility of drawing a card and keeping it.
-        // However, this would generate a problematic tree of possibilities since each player
-        // could choose to draw a card and keep it instead of playing it, so no one would ever
-        // play.
-
         return possibleMoves;
     }
 
@@ -185,13 +165,11 @@ public class MoveFinder {
     private void addPlayNextOnPileToPossibleMoves(List<Move> possibleMoves, Card nextOnPile) {
         if (nextOnPile.isWildCard()) {
             for (CardColor nextColor : CardColor.values()) {
-                // We can draw a wild or wild draw four, play it and choose the color
                 possibleMoves.add(new Move(new DrawCard(1),
                         new PlayCard(-game.getPlayers().getCurrentPlayer().getCards().size(), nextOnPile),
                         new ChooseColor(nextColor)));
             }
         } else {
-            // We can draw a card that isn't a wild but can be played, then play it
             possibleMoves.add(new Move(new DrawCard(1),
                     new PlayCard(-game.getPlayers().getCurrentPlayer().getCards().size(), nextOnPile)));
         }
@@ -202,12 +180,10 @@ public class MoveFinder {
             Card playableCard = game.getPlayers().getCurrentPlayer().getCards().get(playableCardIndex);
             if (playableCard.isWildCard()) {
                 for (CardColor color : CardColor.values()) {
-                    // We can play a wild or wild draw four and choose the color
                     possibleMoves.add(new Move(new PlayCard(playableCardIndex, playableCard),
                             new ChooseColor(color)));
                 }
             } else {
-                // Or we can just play any other available card
                 possibleMoves.add(new Move(new PlayCard(playableCardIndex, playableCard)));
             }
         }
