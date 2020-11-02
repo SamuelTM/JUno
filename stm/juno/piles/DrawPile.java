@@ -69,7 +69,7 @@ public class DrawPile extends Stack<Card> {
         Card firstCard;
 
         while ((firstCard = pop()).getType().equals(CardType.WILD_DRAW_FOUR)) {
-            push(firstCard);
+            add(0, firstCard);
         }
 
         return firstCard;
