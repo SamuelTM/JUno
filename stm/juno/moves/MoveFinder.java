@@ -144,22 +144,19 @@ public class MoveFinder {
     }
 
     private boolean isCardValidAsNextMove(Card card) {
-        if (card != null) {
-            Player currentPlayer = game.getPlayers().getCurrentPlayer();
-            Card lastPlayed = game.getDiscardPile().getLastPlayed();
-            CardColor lastColor = game.getDiscardPile().getLastColor();
+        Player currentPlayer = game.getPlayers().getCurrentPlayer();
+        Card lastPlayed = game.getDiscardPile().getLastPlayed();
+        CardColor lastColor = game.getDiscardPile().getLastColor();
 
-            currentPlayer.getCards().add(card);
-            int lastWithdrawalIndex = currentPlayer.getCards().size() - 1;
-            List<Integer> indexesOfCompatibleCards = getIndexesOfCardsCompatibleWithTestCardOrColor(
-                    currentPlayer.getCards(), lastPlayed, lastColor);
-            boolean validCard = !indexesOfCompatibleCards.isEmpty() && indexesOfCompatibleCards
-                    .get(indexesOfCompatibleCards.size() - 1).equals(lastWithdrawalIndex);
-            currentPlayer.getCards().remove(lastWithdrawalIndex);
+        currentPlayer.getCards().add(card);
+        int lastWithdrawalIndex = currentPlayer.getCards().size() - 1;
+        List<Integer> indexesOfCompatibleCards = getIndexesOfCardsCompatibleWithTestCardOrColor(
+                currentPlayer.getCards(), lastPlayed, lastColor);
+        boolean validCard = !indexesOfCompatibleCards.isEmpty() && indexesOfCompatibleCards
+                .get(indexesOfCompatibleCards.size() - 1).equals(lastWithdrawalIndex);
+        currentPlayer.getCards().remove(lastWithdrawalIndex);
 
-            return validCard;
-        }
-        return false;
+        return validCard;
     }
 
     private void addPlayNextOnPileToPossibleMoves(List<Move> possibleMoves, Card nextOnPile) {

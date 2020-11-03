@@ -63,7 +63,7 @@ public class SearchAlg {
     public static double[] getAlpha(int size) {
         double[] alpha = new double[size];
         for (int i = 0; i < size; i++) {
-            alpha[i] = -Double.MAX_VALUE;
+            alpha[i] = Double.MIN_VALUE;
         }
 
         return alpha;
@@ -79,7 +79,7 @@ public class SearchAlg {
             for (int i = 0; i < possibleMoves.size(); i++) {
                 Uno clone = new Uno(game);
                 clone.executeMove(possibleMoves.get(i), false);
-                int p = game.getPlayers().getCurrentPlayerIndex();
+                int currentPlayerIndex = game.getPlayers().getCurrentPlayerIndex();
 
                 Tuple<Move, double[]> psiStar = hypermax(clone, depth, Arrays.copyOf(alpha, alpha.length));
 
@@ -87,8 +87,8 @@ public class SearchAlg {
                     bestMove = new Tuple<>(possibleMoves.get(i), psiStar.y);
                 }
 
-                if (alpha[p] < psiStar.y[p]) {
-                    alpha[p] = psiStar.y[p];
+                if (alpha[currentPlayerIndex] < psiStar.y[currentPlayerIndex]) {
+                    alpha[currentPlayerIndex] = psiStar.y[currentPlayerIndex];
                     bestMove = new Tuple<>(possibleMoves.get(i), psiStar.y);
                 }
 
