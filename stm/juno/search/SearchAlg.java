@@ -1,7 +1,7 @@
 package stm.juno.search;
 
 import stm.juno.Uno;
-import stm.juno.moves.Move;
+import stm.juno.actions.Move;
 
 import java.util.Arrays;
 import java.util.List;
@@ -33,16 +33,16 @@ public class SearchAlg {
         } else {
             Tuple<Move, double[]> bestMove = null;
             double alpha = -Double.MAX_VALUE;
-            List<Move> possibleMoves = game.getMoveFinder().getPossibleMoves();
+            List<Move> possibleMoves = game.getPossibleMoves();
             for (Move move : possibleMoves) {
                 Uno clone = new Uno(game);
                 clone.executeMove(move, false);
 
-                int p =  game.getPlayers().getCurrentPlayerIndex();
+                int currentPlayerIndex =  game.getPlayers().getCurrentPlayerIndex();
                 Tuple<Move, double[]> psiStar = NMax(clone, depth);
 
-                if (alpha < psiStar.y[p]) {
-                    alpha = psiStar.y[p];
+                if (alpha < psiStar.y[currentPlayerIndex]) {
+                    alpha = psiStar.y[currentPlayerIndex];
                     bestMove = new Tuple<>(move, psiStar.y);
                 }
             }
@@ -63,7 +63,7 @@ public class SearchAlg {
     public static double[] getAlpha(int size) {
         double[] alpha = new double[size];
         for (int i = 0; i < size; i++) {
-            alpha[i] = Double.MIN_VALUE;
+            alpha[i] = Double.NEGATIVE_INFINITY;
         }
 
         return alpha;
@@ -75,7 +75,7 @@ public class SearchAlg {
             return new Tuple<>(new Move(), subtractAverage(game.getScores()));
         } else {
             Tuple<Move, double[]> bestMove = null;
-            List<Move> possibleMoves = game.getMoveFinder().getPossibleMoves();
+            List<Move> possibleMoves = game.getPossibleMoves();
             for (int i = 0; i < possibleMoves.size(); i++) {
                 Uno clone = new Uno(game);
                 clone.executeMove(possibleMoves.get(i), false);

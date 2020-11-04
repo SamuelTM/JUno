@@ -1,16 +1,17 @@
 package stm.juno;
 
-import stm.juno.moves.Move;
+import stm.juno.actions.*;
 import stm.juno.cards.Card;
+import stm.juno.cards.CardColor;
+import stm.juno.cards.CardType;
+import stm.juno.entities.Player;
 import stm.juno.entities.Players;
-import stm.juno.moves.MoveFinder;
+import stm.juno.actions.Move;
 import stm.juno.piles.DiscardPile;
 import stm.juno.piles.DrawPile;
 import stm.juno.search.SearchAlg;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.DoubleStream;
 
 public class Uno {
@@ -27,8 +28,6 @@ public class Uno {
 
     private final Random random;
 
-    private final MoveFinder moveFinder;
-
     public Uno(int nPlayers, boolean verbose) {
         this.drawPile = new DrawPile(Card.getDeck(), verbose);
 
@@ -41,8 +40,6 @@ public class Uno {
         this.verbose = verbose;
 
         this.random = new Random();
-
-        this.moveFinder = new MoveFinder(this);
     }
 
     public Uno(Uno toCopy) {
@@ -61,7 +58,6 @@ public class Uno {
 
         verbose = toCopy.verbose;
         random = new Random();
-        moveFinder = new MoveFinder(this);
     }
 
     public int getWinnerIndex() {
@@ -75,7 +71,7 @@ public class Uno {
     }
 
     private void chooseAndExecuteMove() {
-        List<Move> possibleMoves = moveFinder.getPossibleMoves();
+        List<Move> possibleMoves = getPossibleMoves();
         if (verbose) {
             printStatus(possibleMoves);
         }
@@ -179,7 +175,173 @@ public class Uno {
         return scores;
     }
 
-    public MoveFinder getMoveFinder() {
-        return moveFinder;
+
+    private List<Integer> getIndexesOfCardsCompatibleWithTestCardOrColor(List<Card> cards, Card testCard,
+                                                                         CardColor testColor) {
+        final HashMap<Card, Integer> uniqueCards = new HashMap<>();
+        for (int i = 0; i < cards.size(); i++) {
+            Card currentPlayerCard = cards.get(i);
+            if (currentPlayerCard.isWildCard()) {
+                uniqueCards.putIfAbsent(currentPlayerCard, i);
+            } else {
+                if (testCard != null && !testCard.isWildCard()) {
+                    if (currentPlayerCard.getColor().equals(testCard.getColor())) {
+                        uniqueCards.putIfAbsent(currentPlayerCard, i);
+                    } else {
+                        boolean sameType = currentPlayerCard.getType().equals(testCard.getType()),
+                                isNumber = currentPlayerCard.getType().equals(CardType.NUMBER),
+                                sameValue = currentPlayerCard.getValue() == testCard.getValue();
+                        if ((sameType && !isNumber) || (isNumber && sameValue)) {
+                            uniqueCards.putIfAbsent(currentPlayerCard, i);
+                        }
+                    }
+                } else if (testColor != null) {
+                    if (currentPlayerCard.getColor().equals(testColor)) {
+                        uniqueCards.putIfAbsent(currentPlayerCard, i);
+                    }
+                }
+            }
+        }
+
+        return new ArrayList<>(uniqueCards.values());
+    }
+
+    public List<Move> getPossibleMoves() {
+        if (getDiscardPile().isPendingAction()) {
+            return getMovesThatSolvePendingAction();
+        } else {
+            return getPossibleMovesWhenThereIsNoPendingAction();
+        }
+    }
+
+    private List<Move> getMovesThatSolvePendingAction() {
+        final List<Move> possibleMoves = new ArrayList<>();
+        switch (getDiscardPile().getLastPlayed().getType()) {
+            case WILD:
+                addMovesThatSolvePendingActionFromWildCard(possibleMoves);
+                break;
+            case WILD_DRAW_FOUR:
+                possibleMoves.add(new Move(new DrawCard(4)));
+                break;
+            case DRAW_TWO:
+                possibleMoves.add(new Move(new DrawCard(2)));
+                break;
+            case REVERSE:
+                possibleMoves.add(new Move(new ReverseDirection()));
+                break;
+            case SKIP:
+                possibleMoves.add(new Move(new SkipPlayer()));
+                break;
+        }
+        return possibleMoves;
+    }
+
+    private void addMovesThatSolvePendingActionFromWildCard(List<Move> possibleMoves) {
+        for (CardColor possibleColorChoice : CardColor.values()) {
+            final List<Integer> indexesOfCardsCompatibleWithColor = getIndexesOfCardsCompatibleWithTestCardOrColor(
+                    getPlayers().getCurrentPlayer().getCards(), null, possibleColorChoice);
+            if (!indexesOfCardsCompatibleWithColor.isEmpty()) {
+                addChooseColorAndPlayCardAtHandMove(possibleMoves, possibleColorChoice,
+                        indexesOfCardsCompatibleWithColor);
+            } else {
+                possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1)));
+            }
+
+            Card nextOnPile = getDrawPile().getNext();
+            if (nextOnPile != null && isCardValidAsNextMove(nextOnPile)) {
+                addChooseColorDrawCardAndPlayItMove(possibleMoves, possibleColorChoice, nextOnPile);
+            }
+        }
+    }
+
+    private void addChooseColorAndPlayCardAtHandMove(List<Move> possibleMoves, CardColor possibleColorChoice,
+                                                     List<Integer> indexesOfCardsCompatibleWithColor) {
+        for (int cardIndex : indexesOfCardsCompatibleWithColor) {
+            Card possibleCard = getPlayers().getCurrentPlayer().getCards().get(cardIndex);
+            if (possibleCard.isWildCard()) {
+                for (CardColor nextColor : CardColor.values()) {
+                    possibleMoves.add(new Move(new ChooseColor(possibleColorChoice),
+                            new PlayCard(cardIndex, possibleCard), new ChooseColor(nextColor)));
+                }
+            } else {
+                possibleMoves.add(new Move(new ChooseColor(possibleColorChoice),
+                        new PlayCard(cardIndex, possibleCard)));
+            }
+        }
+    }
+
+    private void addChooseColorDrawCardAndPlayItMove(List<Move> possibleMoves, CardColor possibleColorChoice,
+                                                     Card nextOnPile) {
+        if (nextOnPile.isWildCard()) {
+            for (CardColor nextColor : CardColor.values()) {
+                possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1),
+                        new PlayCard(-getPlayers().getCurrentPlayer().getCards().size(),
+                                nextOnPile), new ChooseColor(nextColor)));
+            }
+        } else {
+            possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1),
+                    new PlayCard(-getPlayers().getCurrentPlayer().getCards().size(),
+                            nextOnPile)));
+        }
+    }
+
+    private List<Move> getPossibleMovesWhenThereIsNoPendingAction() {
+        final List<Move> possibleMoves = new ArrayList<>();
+        Card nextOnPile = getDrawPile().getNext();
+        if (nextOnPile != null && isCardValidAsNextMove(nextOnPile)) {
+            addPlayNextOnPileToPossibleMoves(possibleMoves, nextOnPile);
+        }
+        List<Integer> currentPlayerPlayableCards = getIndexesOfCardsCompatibleWithTestCardOrColor(
+                getPlayers().getCurrentPlayer().getCards(), getDiscardPile().getLastPlayed(),
+                getDiscardPile().getLastColor());
+        if (!currentPlayerPlayableCards.isEmpty()) {
+            addPlayableCardsToPossibleMoves(possibleMoves, currentPlayerPlayableCards);
+        } else {
+            possibleMoves.add(new Move(new DrawCard(1)));
+        }
+        return possibleMoves;
+    }
+
+    private boolean isCardValidAsNextMove(Card card) {
+        Player currentPlayer = getPlayers().getCurrentPlayer();
+        Card lastPlayed = getDiscardPile().getLastPlayed();
+        CardColor lastColor = getDiscardPile().getLastColor();
+
+        currentPlayer.getCards().add(card);
+        int lastWithdrawalIndex = currentPlayer.getCards().size() - 1;
+        List<Integer> indexesOfCompatibleCards = getIndexesOfCardsCompatibleWithTestCardOrColor(
+                currentPlayer.getCards(), lastPlayed, lastColor);
+        boolean validCard = !indexesOfCompatibleCards.isEmpty() && indexesOfCompatibleCards
+                .get(indexesOfCompatibleCards.size() - 1).equals(lastWithdrawalIndex);
+        currentPlayer.getCards().remove(lastWithdrawalIndex);
+
+        return validCard;
+    }
+
+    private void addPlayNextOnPileToPossibleMoves(List<Move> possibleMoves, Card nextOnPile) {
+        if (nextOnPile.isWildCard()) {
+            for (CardColor nextColor : CardColor.values()) {
+                possibleMoves.add(new Move(new DrawCard(1),
+                        new PlayCard(-getPlayers().getCurrentPlayer().getCards().size(), nextOnPile),
+                        new ChooseColor(nextColor)));
+            }
+        } else {
+            possibleMoves.add(new Move(new DrawCard(1),
+                    new PlayCard(-getPlayers().getCurrentPlayer().getCards().size(), nextOnPile)));
+        }
+    }
+
+    private void addPlayableCardsToPossibleMoves(List<Move> possibleMoves, List<Integer> currentPlayerPlayableCards) {
+        for (int playableCardIndex : currentPlayerPlayableCards) {
+            Card playableCard = getPlayers().getCurrentPlayer().getCards().get(playableCardIndex);
+            if (playableCard.isWildCard()) {
+                for (CardColor color : CardColor.values()) {
+                    possibleMoves.add(new Move(new PlayCard(playableCardIndex, playableCard),
+                            new ChooseColor(color)));
+                }
+            } else {
+                possibleMoves.add(new Move(new PlayCard(playableCardIndex, playableCard)));
+            }
+        }
     }
 }

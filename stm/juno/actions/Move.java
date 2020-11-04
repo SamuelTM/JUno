@@ -1,7 +1,6 @@
-package stm.juno.moves;
+package stm.juno.actions;
 
 import stm.juno.Uno;
-import stm.juno.actions.Action;
 
 import java.util.Arrays;
 

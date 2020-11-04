@@ -25,41 +25,41 @@ public class DrawPile extends Stack<Card> {
     public Card[] draw(int nCards, DiscardPile discardPile) throws UnsupportedOperationException {
         Card[] cards = new Card[nCards];
 
-        if (discardPile != null) {
-            if (size() < nCards && discardPile.size() >= (nCards - size())) {
-                Card top = getNext();
+        boolean notEnoughCardsInThePile = size() < nCards;
+        boolean discardPileHasCardsToTakeFrom = discardPile.size() > (nCards - size());
+        if (notEnoughCardsInThePile && discardPileHasCardsToTakeFrom) {
+            Card topCard = getNext();
 
-                if (top != null) {
-                    pop();
-                }
-
-                // Let's add the cards from the discard pile back to the draw pile
-                Card topDiscardPileCard = discardPile.pop();
-
-                int discardPileSize = discardPile.size();
-
-                for (int i = 0; i < discardPileSize; i++) {
-                    push(discardPile.pop());
-                }
-                // But don't forget to keep the last card played on the discard pile
-                discardPile.push(topDiscardPileCard);
-
-                if (verbose) {
-                    System.out.println("We added the cards from the discard pile back to the draw pile");
-                }
-                Collections.shuffle(this);
-
-                if (top != null) {
-                    push(top);
-                }
-            } else if (size() < nCards && discardPile.size() < (nCards - size())) {
-                // We aren't supposed to get to this point but oh well
-                throw new UnsupportedOperationException("There aren't enough cards to be taken from the draw pile");
+            if (topCard != null) {
+                pop();
             }
 
-            for (int i = 0; i < nCards; i++) {
-                cards[i] = pop();
+            // Let's add the cards from the discard pile back to the draw pile
+            Card topDiscardPileCard = discardPile.pop();
+
+            int discardPileSize = discardPile.size();
+
+            for (int i = 0; i < discardPileSize; i++) {
+                push(discardPile.pop());
             }
+            // But don't forget to keep the last card played on the discard pile
+            discardPile.push(topDiscardPileCard);
+
+            if (verbose) {
+                System.out.println("We added the cards from the discard pile back to the draw pile");
+            }
+            Collections.shuffle(this);
+
+            if (topCard != null) {
+                push(topCard);
+            }
+        } else if (notEnoughCardsInThePile) {
+            // We aren't supposed to get to this point but oh well
+            throw new UnsupportedOperationException("There aren't enough cards to be taken from the draw pile");
+        }
+
+        for (int i = 0; i < nCards; i++) {
+            cards[i] = pop();
         }
 
         return cards;
@@ -76,6 +76,6 @@ public class DrawPile extends Stack<Card> {
     }
 
     public Card getNext() {
-        return peek();
+        return !isEmpty() ? peek() : null;
     }
 }
