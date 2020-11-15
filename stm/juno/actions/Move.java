@@ -25,7 +25,7 @@ public class Move {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof Move) {
+        if (obj instanceof Move) {
             Move move = (Move) obj;
             if (move.actions.length == actions.length) {
                 for (int i = 0; i < move.actions.length; i++) {
@@ -34,6 +34,8 @@ public class Move {
                     }
                 }
             }
+
+            return true;
         }
 
         return false;
