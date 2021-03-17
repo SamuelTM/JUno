@@ -1,7 +1,5 @@
 package stm.juno.actions;
 
-import stm.juno.Uno;
-
 import java.util.Arrays;
 
 public class Move {
@@ -12,10 +10,8 @@ public class Move {
         this.actions = actions;
     }
 
-    public void execute(Uno game, boolean verbose) {
-        for (Action action : actions) {
-            action.execute(game, verbose);
-        }
+    public Action[] getActions() {
+        return actions;
     }
 
     @Override

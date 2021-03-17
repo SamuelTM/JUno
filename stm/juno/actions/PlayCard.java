@@ -1,6 +1,5 @@
 package stm.juno.actions;
 
-import stm.juno.Uno;
 import stm.juno.cards.Card;
 
 public class PlayCard extends Action {
@@ -15,13 +14,12 @@ public class PlayCard extends Action {
         this.notWithdrawnYet = cardIndex < 0;
     }
 
-    @Override
-    public void execute(Uno game, boolean verbose) {
-        Card move = game.getPlayers().getCurrentPlayer().getCards().remove(cardIndex);
-        game.getDiscardPile().discard(move);
-        if (verbose) {
-            System.out.println("Player " + game.getPlayers().getCurrentPlayerIndex() + " played " + card);
-        }
+    public int getCardIndex() {
+        return cardIndex;
+    }
+
+    public Card getCard() {
+        return card;
     }
 
     @Override

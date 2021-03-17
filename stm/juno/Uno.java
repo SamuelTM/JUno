@@ -12,6 +12,7 @@ import stm.juno.piles.DrawPile;
 import stm.juno.search.SearchAlg;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.DoubleStream;
 
 public class Uno {
@@ -26,20 +27,29 @@ public class Uno {
 
     private final boolean verbose;
 
-    private final Random random;
-
     public Uno(int nPlayers, boolean verbose) {
         this.drawPile = new DrawPile(Card.getDeck(), verbose);
 
-        this.discardPile = new DiscardPile(this.drawPile.getStartingCard());
-        this.players = new Players(nPlayers, 7, this);
+        Card startingCard;
+
+        while ((startingCard = drawPile.pop()).getType().equals(CardType.WILD_DRAW_FOUR)) {
+            drawPile.add(0, startingCard);
+        }
+
+        this.discardPile = new DiscardPile(startingCard);
+
+        this.players = new Players();
+
+        for (int i = 0; i < nPlayers; i++) {
+            Player player = new Player();
+            player.getCards().addAll(Arrays.asList(drawPile.draw(7, discardPile)));
+            players.add(player);
+        }
 
         this.scores = new double[nPlayers];
         this.lastTotalOfCardsHeldByEachPlayer = new int[nPlayers];
 
         this.verbose = verbose;
-
-        this.random = new Random();
     }
 
     public Uno(Uno toCopy) {
@@ -57,7 +67,6 @@ public class Uno {
                 toCopy.lastTotalOfCardsHeldByEachPlayer.length);
 
         verbose = toCopy.verbose;
-        random = new Random();
     }
 
     public int getWinnerIndex() {
@@ -81,7 +90,7 @@ public class Uno {
         if (players.getCurrentPlayerIndex() == 0) {
             choice = SearchAlg.hypermax(this, 0, SearchAlg.getAlpha(players.size())).x;
         } else {
-            choice = possibleMoves.get(random.nextInt(possibleMoves.size()));
+            choice = possibleMoves.get(ThreadLocalRandom.current().nextInt(possibleMoves.size()));
         }
 
         executeMove(choice, verbose);
@@ -105,7 +114,10 @@ public class Uno {
 
     public void executeMove(Move move, boolean verbose) {
         lastTotalOfCardsHeldByEachPlayer = players.getTotalOfCardsHeldByEachPlayer();
-        move.execute(this, verbose);
+
+        for (Action action : move.getActions()) {
+            executeAction(action, verbose);
+        }
 
         updateScores();
         totalTurns++;
@@ -114,6 +126,43 @@ public class Uno {
         if (verbose) {
             System.out.println("Current scores: " + Arrays.toString(scores));
             System.out.println("Sum of scores: " + DoubleStream.of(scores).sum());
+        }
+    }
+
+    private void executeAction(Action action, boolean verbose) {
+        if (action instanceof ChooseColor) {
+            ChooseColor cc = (ChooseColor) action;
+            discardPile.setLastColor(cc.getColor());
+            if (verbose) {
+                System.out.println("Player " + players.getCurrentPlayerIndex() + " chose the color " + cc.getColor());
+            }
+        } else if (action instanceof DrawCard) {
+            DrawCard dc = (DrawCard) action;
+            Card[] cards = drawPile.draw(dc.getNumCards(), discardPile);
+            players.getCurrentPlayer().getCards().addAll(Arrays.asList(cards));
+            discardPile.setPendingAction(false);
+            if (verbose) {
+                System.out.println(dc.getNumCards() + " cards have been withdrawn from the draw pile");
+            }
+        } else if (action instanceof PlayCard) {
+            PlayCard pc = (PlayCard) action;
+            Card move = players.getCurrentPlayer().getCards().remove(pc.getCardIndex());
+            discardPile.discard(move);
+            if (verbose) {
+                System.out.println("Player " + players.getCurrentPlayerIndex() + " played " + pc.getCard());
+            }
+        } else if (action instanceof ReverseDirection) {
+            players.reverseDirection();
+            discardPile.setPendingAction(false);
+            if (verbose) {
+                System.out.println("Game direction has been reversed to " + (players.isClockwiseMotion()
+                        ? "clockwise" : "counter-clockwise") + " motion");
+            }
+        } else if (action instanceof SkipPlayer) {
+            discardPile.setPendingAction(false);
+            if (verbose) {
+                System.out.println("Player " + players.getCurrentPlayerIndex() + " has been skipped");
+            }
         }
     }
 
@@ -247,7 +296,7 @@ public class Uno {
                 possibleMoves.add(new Move(new ChooseColor(possibleColorChoice), new DrawCard(1)));
             }
 
-            Card nextOnPile = getDrawPile().getNext();
+            Card nextOnPile = getDrawPile().peekNext();
             if (nextOnPile != null && isCardValidAsNextMove(nextOnPile)) {
                 addChooseColorDrawCardAndPlayItMove(possibleMoves, possibleColorChoice, nextOnPile);
             }
@@ -287,7 +336,7 @@ public class Uno {
 
     private List<Move> getPossibleMovesWhenThereIsNoPendingAction() {
         final List<Move> possibleMoves = new ArrayList<>();
-        Card nextOnPile = getDrawPile().getNext();
+        Card nextOnPile = getDrawPile().peekNext();
         if (nextOnPile != null && isCardValidAsNextMove(nextOnPile)) {
             addPlayNextOnPileToPossibleMoves(possibleMoves, nextOnPile);
         }

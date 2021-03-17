@@ -1,32 +1,18 @@
 package stm.juno.entities;
 
-import stm.juno.Uno;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class Players extends ArrayList<Player> {
 
-    private final int nPlayers;
-    private final int cardsPerPlayer;
     private int currentPlayerIndex;
     private boolean clockwiseMotion;
 
-    public Players(int nPlayers, int cardsPerPlayer, Uno game) {
-        this.nPlayers = nPlayers;
-        this.cardsPerPlayer = cardsPerPlayer;
+    public Players() {
         this.clockwiseMotion = true;
-
-        for (int i = 0; i < nPlayers; i++) {
-            Player player = new Player();
-            player.getCards().addAll(Arrays.asList(game.getDrawPile().draw(cardsPerPlayer, game.getDiscardPile())));
-            add(player);
-        }
+        this.currentPlayerIndex = 0;
     }
 
     public Players(Players toCopy) {
-        nPlayers = toCopy.nPlayers;
-        cardsPerPlayer = toCopy.cardsPerPlayer;
         currentPlayerIndex = toCopy.currentPlayerIndex;
         clockwiseMotion = toCopy.clockwiseMotion;
 
@@ -52,12 +38,12 @@ public class Players extends ArrayList<Player> {
     }
 
     public void nextPlayer() {
-        currentPlayerIndex = (clockwiseMotion ? currentPlayerIndex + 1 : currentPlayerIndex + nPlayers - 1) % nPlayers;
+        currentPlayerIndex = (clockwiseMotion ? currentPlayerIndex + 1 : currentPlayerIndex + size() - 1) % size();
     }
 
     public int[] getTotalOfCardsHeldByEachPlayer() {
-        int[] totals = new int[nPlayers];
-        for (int i = 0; i < nPlayers; i++) {
+        int[] totals = new int[size()];
+        for (int i = 0; i < size(); i++) {
             totals[i] = get(i).getCards().size();
         }
 

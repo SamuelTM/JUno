@@ -1,7 +1,6 @@
 package stm.juno.piles;
 
 import stm.juno.cards.Card;
-import stm.juno.cards.CardType;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,11 +27,7 @@ public class DrawPile extends Stack<Card> {
         boolean notEnoughCardsInThePile = size() < nCards;
         boolean discardPileHasCardsToTakeFrom = discardPile.size() > (nCards - size());
         if (notEnoughCardsInThePile && discardPileHasCardsToTakeFrom) {
-            Card topCard = getNext();
-
-            if (topCard != null) {
-                pop();
-            }
+            Card topCard = !isEmpty() ? pop() : null;
 
             // Let's add the cards from the discard pile back to the draw pile
             Card topDiscardPileCard = discardPile.pop();
@@ -65,17 +60,7 @@ public class DrawPile extends Stack<Card> {
         return cards;
     }
 
-    public Card getStartingCard() {
-        Card firstCard;
-
-        while ((firstCard = pop()).getType().equals(CardType.WILD_DRAW_FOUR)) {
-            add(0, firstCard);
-        }
-
-        return firstCard;
-    }
-
-    public Card getNext() {
+    public Card peekNext() {
         return !isEmpty() ? peek() : null;
     }
 }

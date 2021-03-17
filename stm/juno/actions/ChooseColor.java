@@ -1,6 +1,5 @@
 package stm.juno.actions;
 
-import stm.juno.Uno;
 import stm.juno.cards.CardColor;
 
 public class ChooseColor extends Action {
@@ -11,12 +10,8 @@ public class ChooseColor extends Action {
         this.color = color;
     }
 
-    @Override
-    public void execute(Uno game, boolean verbose) {
-        game.getDiscardPile().setLastColor(color);
-        if (verbose) {
-            System.out.println("Player " + game.getPlayers().getCurrentPlayerIndex() + " chose the color " + color);
-        }
+    public CardColor getColor() {
+        return color;
     }
 
     @Override
